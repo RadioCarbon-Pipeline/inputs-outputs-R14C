@@ -6,7 +6,7 @@ They live here.
 Here, we present a couple of usage scenarios.  
 Before any of the steps below, you should:
 1. Export the data to a CSV file
-2. Make sure the column that has the C14 dates is called `C14Age`, and the column that has the standard error is called `C14SD`
+2. Make sure the column that has the C14 dates is called `C14Age`, and the column that has the error is called `C14SD`
 
 ### Scenario 1: New file to calibrate 
 Let's say the file that we want to calibrate is called `example.csv`:
