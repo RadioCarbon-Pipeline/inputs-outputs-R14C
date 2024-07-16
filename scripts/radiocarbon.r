@@ -9,6 +9,8 @@ args <- commandArgs(trailingOnly = TRUE)
 confidence_interval <- 0.95
 step <- 5
 
+time <- Sys.time()
+
 get_value <- function(i) {
   v <- strsplit(config[[i, 1]], "=")[[1]][2]
   return(v)
@@ -68,7 +70,7 @@ c.caldates <- calibrate(x = c$C14Age, errors = c$C14SD, calCurves = "intcal20", 
 
 DK.spd <- spd(c.caldates, timeRange = c(8000, 0))
 
-pdf("plot.pdf")
+pdf(paste("plot (", time, ").pdf", sep = ""))
 
 plot(DK.spd)
 plot(DK.spd, runm = 200, add = TRUE, type = "simple", col = "darkorange", lwd = 1.5, lty = 2) # using a rolling average of 200 years for smoothing
