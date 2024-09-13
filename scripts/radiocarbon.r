@@ -1,15 +1,17 @@
 library(rcarbon)
 library(ggplot2)
 
-# R code itself is really slow
-# Like python, the only things that are fast are functions that call compiled C code.
-# We should try to use the stdlib as much as possible
-# change
-
 args <- commandArgs(trailingOnly = TRUE)
+no_trailing_args <- commandArgs(trailingOnly = FALSE)
+script_name_index <- which(grepl("^--file=", no_trailing_args))
+script_name <- sub("^--file=", "", no_trailing_args[script_name_index])
+script_name <- sub("\\.r$", "", basename(script_name))
+
+print(script_name)
 
 confidence_interval <- 0.95
 step <- 5
+value <- "Everything"
 
 get_value <- function(i) {
   v <- strsplit(config[[i, 1]], "=")[[1]][2]
@@ -45,9 +47,22 @@ if (length(args) == 0) {
   print("Starting...")
 }
 
-date <- Sys.time()
+file_name <- sub("\\.csv$", "", basename(args[1]))
 
-c <- read.csv(args[[1]])
+date <- format(Sys.time(), "%d-%m-%Y@%H:%M:%S")
+
+# determining the separator of the CSV file
+first_line <- readLines(args[[1]], n = 1)
+comma_count <- length(gregexpr(",", first_line)[[1]])
+semicolon_count <- length(gregexpr(";", first_line)[[1]])
+
+if (comma_count > semicolon_count) {
+  sep <- ","
+} else {
+  sep <- ";"
+}
+
+c <- read.csv(args[[1]], sep = sep, stringsAsFactors = FALSE)
 
 if (length(args) == 3) {
   column <- get_value(3)
@@ -55,7 +70,6 @@ if (length(args) == 3) {
 
   if (is.na(column) || is.na(value)) {
     print("No subsetting applied")
-    value <- "Everything"
   } else {
     print(paste("Filtering on column:", column, "with value:", value))
 
@@ -67,13 +81,16 @@ if (nrow(c) == 0) {
   stop("CAREFUL: No values match the subsetting provided.")
 }
 
+length(c$C14Age)
+length(c$C14SD)
+
 original_col_len <- ncol(c)
 
 c.caldates <- calibrate(x = c$C14Age, errors = c$C14SD, calCurves = "intcal20", eps = 1e-5, ncores = 4, type = "full")
 
 DK.spd <- spd(c.caldates, timeRange = c(8000, 0))
 
-pdf(paste("spd-plot-", date, ".pdf", sep = ""))
+pdf(paste(file_name, script_name, "spd", date, "pdf", sep = "."))
 
 plot(DK.spd)
 plot(DK.spd, runm = 200, add = TRUE, type = "simple", col = "darkorange", lwd = 1.5, lty = 2) # using a rolling average of 200 years for smoothing
@@ -136,7 +153,7 @@ cumulative_values <- apply(new_cols, 2, sum)
 s <- sum(cumulative_values)
 weight_cumulative_values <- cumulative_values / s
 
-pdf(paste("violin-plot-", date, ".pdf", sep = ""))
+pdf(paste(file_name, script_name, "violin", date, "pdf", sep = "."))
 
 plot(weight_cumulative_values)
 
