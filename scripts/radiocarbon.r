@@ -143,19 +143,48 @@ for (i in seq(from = mm[[1]], to = mm[[2]], by = step)) {
   col <- col + 1
 }
 
+mean_values <- numeric(len)  
+median_values <- numeric(len)  
+
+for (j in 1:len) {
+  row_values <- new_cols[j, ]
+  
+  weighted_mean <- sum(row_values * step_values) / sum(row_values)
+  mean_values[j] <- weighted_mean
+
+  median_value <- median(row_values[row_values > 0])  # Exclude zero values if they are not meaningful
+  median_values[j] <- median_value
+}
+
 CalibratedDates <- c(paste("Probabilities of", c$C14ID))
 
+c$WightedMean <- mean_values
+c$Median <- median_values
 c <- cbind(c, CalibratedDates)
 c <- cbind(c, new_cols)
 
+extra_columns = 3
+
 cumulative_values <- apply(new_cols, 2, sum)
+
+new_row <- c(rep("", original_col_len + extra_columns), cumulative_values)
+
+new_row[original_col_len + extra_columns] <- "Cumulative Probabilities"
+
+new_row_df <- as.data.frame(t(new_row))
+colnames(new_row_df) <- colnames(c)
+
+c <- rbind(c, new_row_df)
+
+# Output csv
+write.csv(c, args[[2]], row.names = FALSE)
+print(paste(args[[2]], "created."))
 
 s <- sum(cumulative_values)
 weight_cumulative_values <- cumulative_values / s
 
+# Violin pdf
 pdf(paste(file_name, script_name, "violin", date, "pdf", sep = "."))
-
-plot(weight_cumulative_values)
 
 # Calculate the density
 kde <- density(step_values, weights = weight_cumulative_values)
@@ -163,10 +192,6 @@ kde_df <- data.frame(
   Density = kde$y,
   Years = kde$x
 )
-
-plot(kde)
-plot(kde_df)
-print(kde)
 
 # Create the violin plot
 ggplot(kde_df, aes(x = "", y = Years, weight = Density)) +
@@ -179,16 +204,3 @@ ggplot(kde_df, aes(x = "", y = Years, weight = Density)) +
   ggtitle(label = "Distribution of C14 per site", subtitle = "Illustrates periods of biomass burning") +
   theme_bw()
 dev.off()
-
-new_row <- c(rep("", original_col_len + 1), cumulative_values)
-
-new_row[original_col_len + 1] <- "Cumulative Probabilities"
-
-new_row_df <- as.data.frame(t(new_row))
-colnames(new_row_df) <- colnames(c)
-
-# Bind the new row to the original data
-c <- rbind(c, new_row_df)
-
-write.csv(c, args[[2]], row.names = FALSE)
-print(paste(args[[2]], "created."))
