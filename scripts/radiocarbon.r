@@ -148,12 +148,15 @@ median_values <- numeric(len)
 
 for (j in 1:len) {
   row_values <- new_cols[j, ]
-  
+  total_weight <- sum(row_values)
+
   weighted_mean <- sum(row_values * step_values) / sum(row_values)
   mean_values[j] <- weighted_mean
 
-  median_value <- median(row_values[row_values > 0])  # Exclude zero values if they are not meaningful
-  median_values[j] <- median_value
+  cumulative_weights <- cumsum(row_values)
+  median_index <- which(cumulative_weights >= total_weight / 2)[1] # Find the index where cumulative weight exceeds or equals half the total weight
+  weighted_median <- step_values[median_index]
+  median_values[j] <- weighted_median
 }
 
 CalibratedDates <- c(paste("Probabilities of", c$C14ID))
