@@ -9,8 +9,13 @@ script_name <- sub("\\.r$", "", basename(script_name))
 
 print(script_name)
 
+available_curves <- c('intcal20', 'intcal13', 'intcal13nhpine16', 'shcal20', 'shcal13', 'shcal13shkauri16', 'marine13', 'marine20')
+
 confidence_interval <- 0.95
 step <- 5
+time_left <- 10000
+time_right <- 0
+curve <- "intcal20"
 value <- "Everything"
 
 get_value <- function(i) {
@@ -29,6 +34,9 @@ if (length(args) == 0) {
   config <- read.delim2(args[[3]], header = FALSE, sep = "\n")
   step_cfg <- get_value(1)
   confidence_interval_cfg <- get_value(2)
+  time_left_cfg <- get_value(3)
+  time_right_cfg <- get_value(4)
+  curve_cfg <- get_value(5)
 
   if (is.na(step_cfg)) {
     print("No Step Interval specified, using default value")
@@ -42,7 +50,35 @@ if (length(args) == 0) {
     confidence_interval <- as.numeric(confidence_interval_cfg)
   }
 
+  if (is.na(time_left_cfg)) {
+    print("No start time for the time interval specified, using default value")
+  } else {
+    time_left <- as.numeric(time_left_cfg)
+  }
+
+  if (is.na(time_right_cfg)) {
+    print("No end time for the time interval specified, using default value")
+  } else {
+    time_right <- as.numeric(time_right_cfg)
+  }
+
+  if (is.na(curve_cfg)) {
+    print("No curve specified, using default value")
+  } else {
+    curve <- curve_cfg
+  }
+
+  if (!(curve %in% available_curves)) {
+    stop("ERROR: Curve provided is not available! It should be one of: 'intcal20', 'intcal13', 'intcal13nhpine16', 'shcal20', 'shcal13', 'shcal13shkauri16', 'marine20' or 'marine13'.")
+  }
+
+  if (time_left <= time_right) {
+    stop("ERROR: The left bound for the time interval should be bigger than the right bound!")
+  }
+
   print(paste("Confidence Interval ->", confidence_interval, ", Step ->", step, "years"))
+  print(paste("Time interval -> [", time_left, ", ", time_right, "]"))
+  print(paste("Curve -> ", curve))
 
   print("Starting...")
 }
@@ -65,8 +101,8 @@ if (comma_count > semicolon_count) {
 c <- read.csv(args[[1]], sep = sep, stringsAsFactors = FALSE)
 
 if (length(args) == 3) {
-  column <- get_value(3)
-  value <- get_value(4)
+  column <- get_value(6)
+  value <- get_value(7)
 
   if (is.na(column) || is.na(value)) {
     print("No subsetting applied")
@@ -81,14 +117,11 @@ if (nrow(c) == 0) {
   stop("CAREFUL: No values match the subsetting provided.")
 }
 
-length(c$C14Age)
-length(c$C14SD)
-
 original_col_len <- ncol(c)
 
 c.caldates <- calibrate(x = c$C14Age, errors = c$C14SD, calCurves = "intcal20", eps = 1e-5, ncores = 4, type = "full")
 
-DK.spd <- spd(c.caldates, timeRange = c(8000, 0))
+DK.spd <- spd(c.caldates, timeRange = c(time_left, time_right))
 
 pdf(paste(file_name, script_name, "spd", date, "pdf", sep = "."))
 
@@ -161,7 +194,7 @@ for (j in 1:len) {
 
 CalibratedDates <- c(paste("Probabilities of", c$C14ID))
 
-c$WightedMean <- mean_values
+c$WeightedMean <- mean_values
 c$Median <- median_values
 c <- cbind(c, CalibratedDates)
 c <- cbind(c, new_cols)
@@ -207,3 +240,4 @@ ggplot(kde_df, aes(x = "", y = Years, weight = Density)) +
   ggtitle(label = "Distribution of C14 per site", subtitle = "Illustrates periods of biomass burning") +
   theme_bw()
 dev.off()
+

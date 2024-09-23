@@ -1,5 +1,8 @@
-step=10
-confidence=0.95
+step=20
+confidence=0.90
+time_left_bound=8000
+time_right_bound=0
+curve=intcal20
 column=
 value=
 script=radiocarbon.r
