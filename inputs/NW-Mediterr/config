@@ -1,4 +1,4 @@
-step=20
+step=10
 confidence=0.95
 time_left_bound=12000
 time_right_bound=0
