@@ -1,6 +1,6 @@
 step=20
 confidence=0.95
-time_left_bound=10000
+time_left_bound=12000
 time_right_bound=0
 curve=intcal20
 column=
