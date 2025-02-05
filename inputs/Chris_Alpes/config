@@ -1,5 +1,5 @@
 step=20
-confidence=0.95
+confidence=0.70
 time_left_bound=8000
 time_right_bound=4000
 curve=intcal20
